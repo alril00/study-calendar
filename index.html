@@ -1,24 +1,48 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Учебный календарь и Расписание</title>
+    <meta name="theme-color" id="meta-theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Учебный календарь</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             -webkit-tap-highlight-color: transparent;
+            touch-action: pan-y;
+            /* Разрешает только вертикальный скролл, запрещает двойной тап для зума */
+            user-select: none;
+            /* Отключаем случайное выделение текста при свайпах */
         }
+
+        input,
+        select,
+        textarea {
+            user-select: auto;
+            /* Оставляем возможность выделять текст в полях ввода */
+        }
+
         .calendar-grid {
             display: grid;
             grid-template-columns: 2.2rem repeat(7, minmax(0, 1fr));
             gap: 2px;
-            background-color: #f1f5f9;
         }
+
         .calendar-cell {
-            background-color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -28,27 +52,13 @@
             position: relative;
             transition: all 0.15s ease;
         }
+
         .calendar-cell:active {
             transform: scale(0.94);
         }
-        .week-col-cell {
-            background-color: #f8fafc;
-            color: #64748b;
-            font-weight: 700;
-            font-size: 0.72rem;
-            cursor: default;
-        }
-        .header-cell {
-            background-color: #f8fafc;
-            font-weight: 600;
-            color: #94a3b8;
-            font-size: 0.72rem;
-            padding: 0.5rem 0;
-            cursor: default;
-        }
+
         .today-bubble {
-            border: 2px solid #3b82f6;
-            color: #1d4ed8;
+            border-width: 2px;
             font-weight: 700;
             border-radius: 9999px;
             width: 82%;
@@ -57,9 +67,8 @@
             align-items: center;
             justify-content: center;
         }
+
         .selected-bubble {
-            background-color: #3b82f6 !important;
-            color: #ffffff !important;
             font-weight: 700;
             border-radius: 9999px;
             width: 82%;
@@ -69,125 +78,151 @@
             justify-content: center;
             box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
         }
+
         .has-lessons-dot {
             position: absolute;
             bottom: 3px;
             width: 4px;
             height: 4px;
             border-radius: 50%;
-            background-color: #3b82f6;
         }
-        .other-month {
-            color: #cbd5e1;
-        }
+
         .tab-btn.active {
             color: #2563eb;
-            border-bottom: 2px solid #2563eb;
+            border-bottom-width: 2px;
+            border-color: #2563eb;
             font-weight: 600;
         }
+
+        .dark .tab-btn.active {
+            color: #60a5fa;
+            border-color: #60a5fa;
+        }
+
         ::-webkit-scrollbar {
             width: 4px;
             height: 4px;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 4px;
         }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen">
 
-    <div class="max-w-md mx-auto bg-white min-h-screen flex flex-col shadow-xl relative pb-20">
-        
-        <!-- Верхняя шапка -->
-        <header class="bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 text-white p-5 rounded-b-[2rem] shadow-lg relative z-20">
-            <div class="flex items-center justify-between mb-3">
-                <!-- <div class="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full cursor-pointer hover:bg-white/20 transition" onclick="editGroupName()"> -->
-                    <!-- <span id="group-name-badge" class="text-xs font-semibold tracking-wider uppercase text-blue-100">
-                        Моя группа
-                    </span> -->
-                    <!-- <svg class="w-3 h-3 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg> -->
-                <!-- </div> -->
-                <div class="flex items-center gap-1">
-                    <button onclick="openShareModal()" title="Поделиться шаблоном" class="p-2 rounded-full hover:bg-white/20 active:scale-95 transition text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                        </svg>
-                    </button>
-                    <button onclick="openEditScheduleModal()" title="Список предметов" class="p-2 rounded-full hover:bg-white/20 active:scale-95 transition text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
+<body
+    class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 antialiased min-h-screen transition-colors">
+
+    <div
+        class="max-w-md mx-auto bg-white dark:bg-slate-950 min-h-screen flex flex-col shadow-xl relative pb-20 transition-colors">
+
+        <!-- КОМПАКТНАЯ ШАПКА -->
+        <header
+            class="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20 transition-colors">
+            <div class="flex flex-col">
+                <div class="flex items-center gap-2 mb-0.5">
+
+                    <span id="compact-header-date"
+                        class="text-lg font-extrabold text-slate-800 dark:text-white leading-tight">--</span> <button
+                        onclick="selectToday()" id="todayBtn"
+                        class="text-[10px] uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-1 rounded-md font-bold hover:bg-blue-200 dark:hover:bg-blue-800 active:scale-95 transition">
+                        Сегодня
                     </button>
                 </div>
+                <span id="compact-header-week"
+                    class="text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">--</span>
             </div>
 
-            <div class="flex flex-col items-center py-2">
-                <!-- <span class="text-blue-100 text-xs font-medium uppercase tracking-widest">Текущий учебный процесс</span> -->
-                <div class="flex items-baseline gap-2 mt-1">
-                    <span id="hero-week-num" class="text-6xl font-extrabold tracking-tight">--</span>
-                    <span class="text-xl font-bold text-blue-200">неделя</span>
-                </div>
-                <!-- <div id="hero-week-parity" class="text-xs bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full font-medium mt-1"> -->
-                    <!-- -- -->
-                <!-- </div> -->
+            <div class="flex items-center gap-1">
+                <button onclick="openManageModal()" title="Редактировать расписание"
+                    class="p-2 rounded-full text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                </button>
+                <button onclick="openShareModal()" title="Поделиться"
+                    class="p-2 rounded-full text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                </button>
+                <button onclick="openSettingsModal()" title="Настройки"
+                    class="p-2 rounded-full text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
             </div>
-
-            <p id="hero-today-date" class="text-center text-blue-100/90 text-xs mt-2 font-medium"></p>
         </header>
 
         <!-- Вкладки -->
-        <div class="flex border-b border-slate-200 bg-white sticky top-0 z-10 px-4 text-sm font-medium text-slate-500">
-            <button id="tab-calendar-btn" onclick="switchTab('calendar')" class="tab-btn active flex-1 py-3 text-center transition">
-                Календарь
-            </button>
-            <button id="tab-table-btn" onclick="switchTab('table')" class="tab-btn flex-1 py-3 text-center transition">
-                Вся сетка
-            </button>
+        <div
+            class="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm font-medium text-slate-500 dark:text-slate-400 transition-colors">
+            <button id="tab-calendar-btn" onclick="switchTab('calendar')"
+                class="tab-btn active flex-1 py-3 text-center transition">Календарь</button>
+            <button id="tab-table-btn" onclick="switchTab('table')"
+                class="tab-btn flex-1 py-3 text-center transition">Сетка расписания</button>
         </div>
 
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <main class="flex-1 px-4 py-4 overflow-y-auto">
-            
+
             <!-- Режим: Календарь -->
             <section id="view-calendar" class="space-y-4">
-                
+
                 <!-- Месяц и переключатели -->
-                <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
-                    <button onclick="changeMonth(-1)" class="p-2 rounded-xl hover:bg-white hover:shadow-sm active:scale-95 transition text-slate-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                <div
+                    class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 transition-colors">
+                    <button onclick="changeMonth(-1)"
+                        class="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm active:scale-95 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M15 19l-7-7 7-7" />
+                        </svg>
                     </button>
                     <div class="text-center">
-                        <div id="calendar-month-year" class="font-bold text-slate-800 text-base capitalize"></div>
-                        <div id="calendar-academic-year" class="text-[11px] text-slate-400 font-medium">
-                            ==
-                        </div>
+                        <div id="calendar-month-year"
+                            class="font-bold text-slate-800 dark:text-slate-100 text-base capitalize"></div>
                     </div>
-                    <button onclick="changeMonth(1)" class="p-2 rounded-xl hover:bg-white hover:shadow-sm active:scale-95 transition text-slate-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    <button onclick="changeMonth(1)"
+                        class="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm active:scale-95 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                        </svg>
                     </button>
                 </div>
 
                 <!-- Сетка календаря -->
-                <div class="bg-white rounded-2xl border border-slate-200/80 p-2 shadow-sm">
-                    <div class="calendar-grid rounded-xl overflow-hidden" id="calendar-grid">
+                <div
+                    class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-2 shadow-sm transition-colors">
+                    <div class="calendar-grid rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800"
+                        id="calendar-grid">
                         <!-- JS сетка -->
                     </div>
                 </div>
 
                 <!-- Карточка выбранного дня с расписанием -->
-                <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div
+                    class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-sm transition-colors">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                         <div>
-                            <h3 id="selected-day-title" class="font-bold text-slate-800 text-base">Выбранный день</h3>
-                            <p id="selected-day-subtitle" class="text-xs text-blue-600 font-medium mt-0.5">--</p>
+                            <h3 id="selected-day-title" class="font-bold text-slate-800 dark:text-slate-100 text-base">
+                                Выбранный день</h3>
+                            <p id="selected-day-subtitle"
+                                class="text-xs text-blue-600 dark:text-blue-400 font-medium mt-0.5">--</p>
                         </div>
-                        <button onclick="selectToday()" class="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition active:scale-95">
-                            Сегодня
-                        </button>
                     </div>
 
-                    <!-- Список занятий выбранного дня -->
                     <div id="day-lessons-list" class="mt-3 space-y-2.5">
                         <!-- JS вывод -->
                     </div>
@@ -197,14 +232,17 @@
 
             <!-- Режим: Вся сетка недели -->
             <section id="view-table" class="hidden space-y-4">
-                <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                <div
+                    class="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 transition-colors">
                     <div>
-                        <span class="text-xs text-slate-400 font-medium">Фильтр по неделе:</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500 font-medium">Фильтр по неделе:</span>
                         <div class="flex items-center gap-2 mt-0.5">
-                            <span id="table-filter-label" class="font-bold text-slate-800 text-sm">Все недели</span>
+                            <span id="table-filter-label"
+                                class="font-bold text-slate-800 dark:text-slate-200 text-sm">Все недели</span>
                         </div>
                     </div>
-                    <select id="table-week-select" onchange="filterTableByWeek(this.value)" class="text-xs font-semibold bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="table-week-select" onchange="filterTableByWeek(this.value)"
+                        class="text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="all">Показать всё</option>
                         <option value="current">Текущая неделя</option>
                     </select>
@@ -218,21 +256,30 @@
         </main>
 
         <!-- Модалка добавления / редактирования пары -->
-        <div id="lesson-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div id="lesson-modal"
+            class="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div
+                class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 id="modal-lesson-title" class="text-lg font-bold text-slate-800">Добавить занятие</h3>
-                    <button onclick="closeLessonModal()" class="text-slate-400 hover:text-slate-600 p-1">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <h3 id="modal-lesson-title" class="text-lg font-bold text-slate-800 dark:text-white">Добавить
+                        занятие</h3>
+                    <button onclick="closeLessonModal()"
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
 
                 <form id="lesson-form" onsubmit="saveLesson(event)" class="space-y-3.5 text-sm">
                     <input type="hidden" id="form-lesson-id">
-                    
+
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">День недели</label>
-                        <select id="form-day" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">День
+                            недели</label>
+                        <select id="form-day" required
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             <option value="1">Понедельник</option>
                             <option value="2">Вторник</option>
                             <option value="3">Среда</option>
@@ -244,49 +291,66 @@
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">Время начала</label>
-                            <input type="text" id="form-time-start"  required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
+                            <label
+                                class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Начало</label>
+                            <input type="text" id="form-time-start" placeholder="08:30" required
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">Время окончания</label>
-                            <input type="text" id="form-time-end"  required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
+                            <label
+                                class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Конец</label>
+                            <input type="text" id="form-time-end" placeholder="10:00" required
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Название дисциплины</label>
-                        <input type="text" id="form-subject"  required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Название
+                            дисциплины</label>
+                        <input type="text" id="form-subject" placeholder="Название предмета" required
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">Тип занятия</label>
-                            <input type="text" id="form-type"  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Тип
+                                занятия</label>
+                            <input type="text" id="form-type" placeholder="Лекция / Практика"
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">Аудитория / Корпус</label>
-                            <input type="text" id="form-room"  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <label
+                                class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Аудитория</label>
+                            <input type="text" id="form-room" placeholder="ауд. 101"
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Преподаватель</label>
-                        <input type="text" id="form-teacher"  class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label
+                            class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Преподаватель</label>
+                        <input type="text" id="form-teacher" placeholder="Фамилия И.О."
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
 
-                    <div class="bg-blue-50/70 p-3 rounded-xl border border-blue-100">
-                        <label class="block text-xs font-bold text-blue-900 mb-1">Правило учебных недель</label>
-                        <input type="text" id="form-weeks" placeholder="все" required class="w-full bg-white border border-blue-200 rounded-lg px-3 py-2 text-slate-800 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <p class="text-[11px] text-blue-700/80 mt-1 leading-relaxed">
-                            Примеры: <b>все</b>, <b>чётные</b>, <b>нечётные</b>, <b>1-18</b>, <b>2, 4, 6, 8</b>, <b>2-3, 10-13</b>
+                    <div
+                        class="bg-blue-50/70 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50">
+                        <label class="block text-xs font-bold text-blue-900 dark:text-blue-300 mb-1">Правило учебных
+                            недель</label>
+                        <input type="text" id="form-weeks" placeholder="все" required
+                            class="w-full bg-white dark:bg-slate-900 border border-blue-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-800 dark:text-white font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <p class="text-[11px] text-blue-700/80 dark:text-blue-400/80 mt-1 leading-relaxed">
+                            Примеры: <b>все</b>, <b>чётные</b>, <b>нечётные</b>, <b>2, 4, 6, 8</b>, <b>2-3, 10-13</b>
                         </p>
                     </div>
 
                     <div class="flex gap-2 pt-2">
-                        <button type="button" id="btn-delete-lesson" onclick="deleteCurrentLesson()" class="hidden px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-semibold transition">
+                        <button type="button" id="btn-delete-lesson" onclick="deleteCurrentLesson()"
+                            class="hidden px-4 py-2.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl font-semibold transition">
                             Удалить
                         </button>
-                        <button type="submit" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition">
+                        <button type="submit"
+                            class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition">
                             Сохранить
                         </button>
                     </div>
@@ -294,70 +358,146 @@
             </div>
         </div>
 
-        <!-- Модалка: Список занятий и редактирование -->
-        <div id="manage-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl max-h-[85vh] flex flex-col">
+        <!-- Модалка: Список занятий -->
+        <div id="manage-modal"
+            class="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-40 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div
+                class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl max-h-[85vh] flex flex-col transition-colors">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-base font-bold text-slate-800">Все предметы в расписании</h3>
-                    <button onclick="closeEditScheduleModal()" class="text-slate-400 hover:text-slate-600 p-1">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white">Редактор расписания</h3>
+                    <button onclick="closeManageModal()"
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
-                
+
                 <div class="flex gap-2 mb-3">
-                    <button onclick="openAddLessonModal()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <button onclick="openAddLessonModal()"
+                        class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
                         Добавить пару
                     </button>
-                    <button onclick="clearAllSchedule()" class="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl transition">
+                    <button onclick="clearAllSchedule()"
+                        class="py-2 px-3 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-xl transition">
                         Очистить всё
                     </button>
                 </div>
 
-                <div id="manage-lessons-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
-                    <!-- Заполняется JS -->
+                <div id="manage-lessons-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+            </div>
+        </div>
+
+        <!-- Модалка: Настройки (Тема, дата начала) -->
+        <div id="settings-modal"
+            class="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div
+                class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl transition-colors">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white">Настройки</h3>
+                    <button onclick="closeSettingsModal()"
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Тема -->
+                    <div
+                        class="flex items-center justify-between bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            <svg class="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                            Тёмная тема
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="theme-toggle" class="sr-only peer" onchange="toggleTheme()">
+                            <div
+                                class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600">
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Дата старта семестра -->
+                    <div
+                        class="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">Дата начала
+                            семестра (1-я неделя)</label>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-2 leading-tight">От этой даты будет
+                            начинаться отсчет первой недели.</p>
+                        <input type="date" id="settings-start-date" onchange="saveSettings()"
+                            class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <!-- Подпись автора -->
+                <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Сделано для студентов</p>
+                    <a href="https://t.me/alril00" target="_blank"
+                        class="text-[11px] text-blue-500 hover:text-blue-600 dark:text-blue-400 font-semibold mt-1 inline-block transition">
+                        Нашли баг или есть идея? Напишите автору.
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Модалка: Поделиться / Импорт -->
-        <div id="share-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl">
+        <!-- Модалка: Поделиться -->
+        <div id="share-modal"
+            class="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div
+                class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl transition-colors">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-base font-bold text-slate-800">Поделиться расписанием</h3>
-                    <button onclick="closeShareModal()" class="text-slate-400 hover:text-slate-600 p-1">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white">Поделиться расписанием</h3>
+                    <button onclick="closeShareModal()"
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
 
-                <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                    Отправьте ссылку одногруппникам: при переходе по ссылке ваше расписание автоматически загрузится у них на телефоне!
+                <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                    Отправьте ссылку одногруппникам: при переходе по ней, ваше расписание автоматически загрузится у них.
                 </p>
 
                 <div class="space-y-3">
-                    <button onclick="copyShareLink()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                    <button onclick="copyShareLink()"
+                        class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
                         Скопировать готовую ссылку
                     </button>
 
-                    <button onclick="copyJsonData()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        Экспорт в виде JSON-кода
-                    </button>
-
-                    <div class="pt-2 border-t border-slate-100">
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Импорт расписания из JSON-кода</label>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Импорт
+                            расписания из JSON</label>
                         <div class="flex gap-1.5">
-                            <input type="text" id="import-json-input" placeholder="Вставьте JSON-код сюда..." class="flex-1 bg-slate-50 border border-slate-200 text-xs px-3 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500">
-                            <button onclick="importFromJsonInput()" class="px-3 py-2 bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-black transition">
+                            <input type="text" id="import-json-input" placeholder="Вставьте JSON-код сюда..."
+                                class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-xs px-3 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <button onclick="importFromJsonInput()"
+                                class="px-3 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-xl text-xs font-semibold hover:bg-black dark:hover:bg-slate-600 transition">
                                 Загрузить
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div id="share-toast" class="hidden mt-3 text-center text-xs font-medium text-emerald-600 bg-emerald-50 py-2 rounded-lg">
-                    Ссылка скопирована в буфер обмена!
+                <div id="share-toast"
+                    class="hidden mt-3 text-center text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800/50">
+                    Успешно скопировано в буфер!
                 </div>
             </div>
         </div>
@@ -366,10 +506,13 @@
 
     <script>
         // ==========================================
-        // 1. БАЗА ДАННЫХ (ПО УМОЛЧАНИЮ ПУСТАЯ ДЛЯ ЛЮБОЙ ГРУППЫ)
+        // 1. ДАННЫЕ И НАСТРОЙКИ
         // ==========================================
         let schedule = [];
-        let groupName = "Моя группа";
+        let appSettings = {
+            theme: 'light',
+            startDate: '' // Будет вычислено при старте, если пусто
+        };
 
         const todayDate = new Date();
         let displayMonthDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
@@ -381,38 +524,125 @@
         const dayFullNames = ["", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
 
         // ==========================================
-        // 2. УЧЕТ УЧЕБНЫХ НЕДЕЛЬ ОТ 1 СЕНТЯБРЯ
+        // 2. ЗАГРУЗКА, СОХРАНЕНИЕ И ТЕМА
         // ==========================================
-        function getAcademicYear(targetDate) {
-            const year = targetDate.getFullYear();
-            const sept1 = new Date(year, 8, 1);
-            
-            let dayOfWeek = sept1.getDay();
-            dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
-            
-            const week1Monday = new Date(sept1);
-            week1Monday.setDate(sept1.getDate() - (dayOfWeek - 1));
-            week1Monday.setHours(0, 0, 0, 0);
-
-            if (targetDate.getTime() < week1Monday.getTime()) {
-                return year - 1;
-            }
-            return year;
+        function initApp() {
+            loadSettings();
+            loadSchedule();
+            applyTheme();
+            updateHeader();
+            populateWeekSelect();
+            renderAll();
         }
 
-        function getAcademicWeek(date) {
-            const target = new Date(date);
+        function loadSettings() {
+            const saved = localStorage.getItem("study_calendar_settings_v2");
+            if (saved) {
+                try {
+                    appSettings = { ...appSettings, ...JSON.parse(saved) };
+                } catch (e) { }
+            }
+
+            // Если дата старта не задана, ставим 1 сентября текущего (или прошлого) уч. года
+            if (!appSettings.startDate) {
+                const y = todayDate.getMonth() < 7 ? todayDate.getFullYear() - 1 : todayDate.getFullYear();
+                appSettings.startDate = `${y}-09-01`;
+            }
+            document.getElementById('settings-start-date').value = appSettings.startDate;
+            document.getElementById('theme-toggle').checked = appSettings.theme === 'dark';
+        }
+
+        function saveSettings() {
+            appSettings.startDate = document.getElementById('settings-start-date').value || appSettings.startDate;
+            appSettings.theme = document.getElementById('theme-toggle').checked ? 'dark' : 'light';
+            localStorage.setItem("study_calendar_settings_v2", JSON.stringify(appSettings));
+            applyTheme();
+            updateHeader();
+            renderAll();
+        }
+
+        function toggleTheme() {
+            saveSettings();
+        }
+
+        function applyTheme() {
+            const isDark = appSettings.theme === 'dark';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('meta-theme-color').setAttribute('content', '#0f172a'); // slate-950
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('meta-theme-color').setAttribute('content', '#ffffff');
+            }
+        }
+
+        function loadSchedule() {
+            const hash = window.location.hash;
+
+            if (hash.startsWith('#data=')) {
+                const rawData = hash.substring(6);
+                let parsedData = null;
+
+                // Вариант 1: Новый сжатый Base64 формат
+                try {
+                    const decoded = atou(decodeURIComponent(rawData));
+                    const json = JSON.parse(decoded);
+                    parsedData = Array.isArray(json) && Array.isArray(json[0]) ? decompressSchedule(json) : json;
+                } catch (e1) {
+                    // Вариант 2: Старый несжатый URL-encoded формат
+                    try {
+                        parsedData = JSON.parse(decodeURIComponent(rawData));
+                    } catch (e2) {
+                        console.error("Ошибка импорта расписания:", e1, e2);
+                    }
+                }
+
+                if (parsedData && Array.isArray(parsedData)) {
+                    schedule = parsedData;
+                    saveSchedule();
+                    // Очищаем хэш в адресной строке после успешного импорта
+                    window.history.replaceState(null, null, window.location.pathname + window.location.search);
+                    alert('Расписание успешно загружено по ссылке!');
+                    return;
+                } else {
+                    alert('Ошибка: не удалось распознать расписание из ссылки.');
+                }
+            }
+
+            // Если ссылки нет, читаем из памяти браузера
+            const saved = localStorage.getItem('study_schedule');
+            if (saved) {
+                try {
+                    schedule = JSON.parse(saved);
+                } catch (e) {
+                    schedule = [];
+                }
+            } else {
+                schedule = [];
+            }
+        }
+        function saveSchedule() {
+            localStorage.setItem("study_calendar_schedule_v2", JSON.stringify(schedule));
+        }
+
+        // ==========================================
+        // 3. ЛОГИКА НЕДЕЛЬ ОТ ЗАДАННОЙ ДАТЫ
+        // ==========================================
+        function getStartOfWeek(dateStr) {
+            const d = new Date(dateStr);
+            let day = d.getDay();
+            day = day === 0 ? 7 : day;
+            d.setDate(d.getDate() - (day - 1));
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        function getAcademicWeek(dateObj) {
+            const target = new Date(dateObj);
             target.setHours(0, 0, 0, 0);
 
-            const startYear = getAcademicYear(target);
-            const sept1 = new Date(startYear, 8, 1);
-            
-            let dayOfWeek = sept1.getDay();
-            dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
-            
-            const week1Monday = new Date(sept1);
-            week1Monday.setDate(sept1.getDate() - (dayOfWeek - 1));
-            week1Monday.setHours(0, 0, 0, 0);
+            const week1Monday = getStartOfWeek(appSettings.startDate);
+            if (target.getTime() < week1Monday.getTime()) return 0; // До начала семестра
 
             const diffMs = target.getTime() - week1Monday.getTime();
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -424,27 +654,21 @@
             return day === 0 ? 7 : day;
         }
 
-        // ==========================================
-        // 3. УМНЫЙ ПАРСЕР НЕДЕЛЬ
-        // ==========================================
         function isWeekMatching(ruleStr, weekNum) {
+            if (weekNum <= 0) return false;
             if (!ruleStr) return true;
             const str = ruleStr.toLowerCase().trim();
-            
-            if (str === "все" || str === "каждую" || str === "все недели" || str === "*") return true;
-            if (str === "чет" || str === "чёт" || str === "четные" || str === "чётные") return weekNum % 2 === 0;
-            if (str === "нечет" || str === "нечёт" || str === "нечетные" || str === "нечётные") return weekNum % 2 !== 0;
+            if (["все", "каждую", "*", ""].includes(str)) return true;
+            if (["чет", "чёт", "четные", "чётные"].includes(str)) return weekNum % 2 === 0;
+            if (["нечет", "нечёт", "нечетные", "нечётные"].includes(str)) return weekNum % 2 !== 0;
 
             const parts = str.split(",");
             for (let part of parts) {
                 part = part.trim().replace(/нед\.?/g, '').trim();
                 if (!part) continue;
-
                 if (part.includes("-")) {
                     const [start, end] = part.split("-").map(n => parseInt(n.trim(), 10));
-                    if (!isNaN(start) && !isNaN(end)) {
-                        if (weekNum >= start && weekNum <= end) return true;
-                    }
+                    if (!isNaN(start) && !isNaN(end) && weekNum >= start && weekNum <= end) return true;
                 } else {
                     const num = parseInt(part, 10);
                     if (!isNaN(num) && num === weekNum) return true;
@@ -454,102 +678,33 @@
         }
 
         // ==========================================
-        // 4. ЗАГРУЗКА И ХРАНИЛИЩЕ
+        // 4. РЕНДЕР ИНТЕРФЕЙСА
         // ==========================================
-        function loadData() {
-            // Проверка названия группы
-            const savedGroupName = localStorage.getItem("study_group_name_v1");
-            if (savedGroupName) {
-                groupName = savedGroupName;
-                document.getElementById('group-name-badge').textContent = groupName;
-            }
+        function updateHeader() {
+            const dayOfWeekStr = dayNamesShort[getRussianDayOfWeek(todayDate) - 1];
+            const dateStr = `${dayOfWeekStr}, ${todayDate.getDate()} ${monthNamesGenitive[todayDate.getMonth()].slice(0, 3)}`;
 
-            // Проверка импорта из URL хэша
-            if (window.location.hash && window.location.hash.startsWith("#data=")) {
-                try {
-                    const encoded = window.location.hash.replace("#data=", "");
-                    const jsonStr = decodeURIComponent(escape(atob(encoded)));
-                    const imported = JSON.parse(jsonStr);
-                    if (Array.isArray(imported)) {
-                        schedule = imported;
-                        saveScheduleToStorage();
-                        history.replaceState(null, null, window.location.pathname);
-                        showNotification("Расписание успешно загружено по ссылке!");
-                        return;
-                    }
-                } catch(e) {
-                    console.error("Ошибка импорта из URL", e);
-                }
-            }
-
-            // Загрузка локальных данных
-            const local = localStorage.getItem("study_calendar_schedule_v1");
-            if (local) {
-                try {
-                    schedule = JSON.parse(local);
-                } catch (e) {
-                    schedule = [];
-                }
-            } else {
-                schedule = [];
-            }
-        }
-
-        function saveScheduleToStorage() {
-            localStorage.setItem("study_calendar_schedule_v1", JSON.stringify(schedule));
-        }
-
-        function editGroupName() {
-            const name = prompt("Введите название группы или курса:", groupName);
-            if (name && name.trim()) {
-                groupName = name.trim();
-                localStorage.setItem("study_group_name_v1", groupName);
-                document.getElementById('group-name-badge').textContent = groupName;
-            }
-        }
-
-        function clearAllSchedule() {
-            if (confirm("Вы уверены, что хотите полностью очистить всё расписание?")) {
-                schedule = [];
-                saveScheduleToStorage();
-                renderAll();
-                renderManageModalList();
-                showNotification("Все расписание очищено");
-            }
-        }
-
-        // ==========================================
-        // 5. ИНИЦИАЛИЗАЦИЯ И РЕНДЕР
-        // ==========================================
-        function initApp() {
-            loadData();
-            updateHeroHeader();
-            populateWeekSelect();
-            renderCalendar();
-            renderSelectedDay();
-            renderFullTableView();
-        }
-
-        function updateHeroHeader() {
             const currentWeek = getAcademicWeek(todayDate);
-            const isEven = currentWeek % 2 === 0;
+            let weekStr = "";
+            if (currentWeek === 0) weekStr = "Каникулы";
+            else {
+                const isEven = currentWeek % 2 === 0;
+                weekStr = `${currentWeek} неделя`;
+            }
 
-            document.getElementById('hero-week-num').textContent = currentWeek;
-            // document.getElementById('hero-week-parity').textContent = isEven ? "Чётная (знаменатель)" : "Нечётная (числитель)";
-            document.getElementById('hero-today-date').textContent = 
-                `${dayFullNames[getRussianDayOfWeek(todayDate)]}, ${todayDate.getDate()} ${monthNamesGenitive[todayDate.getMonth()]} ${todayDate.getFullYear()}`;
-        }
-
-        function changeMonth(delta) {
-            displayMonthDate.setMonth(displayMonthDate.getMonth() + delta);
-            renderCalendar();
+            document.getElementById('compact-header-date').textContent = dateStr;
+            document.getElementById('compact-header-week').textContent = weekStr;
         }
 
         function selectToday() {
             selectedCalendarDate = new Date(todayDate);
             displayMonthDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+            renderAll();
+        }
+
+        function changeMonth(delta) {
+            displayMonthDate.setMonth(displayMonthDate.getMonth() + delta);
             renderCalendar();
-            renderSelectedDay();
         }
 
         function onDateClick(dateObj) {
@@ -558,18 +713,10 @@
             renderSelectedDay();
         }
 
-        function isSameDay(d1, d2) {
-            return d1.getFullYear() === d2.getFullYear() &&
-                   d1.getMonth() === d2.getMonth() &&
-                   d1.getDate() === d2.getDate();
-        }
-
         function getLessonsForDay(date) {
             const dayOfWeek = getRussianDayOfWeek(date);
             if (dayOfWeek === 7) return [];
-            
             const weekNum = getAcademicWeek(date);
-
             return schedule
                 .filter(item => item.day === dayOfWeek && isWeekMatching(item.weeks, weekNum))
                 .sort((a, b) => a.timeStart.localeCompare(b.timeStart));
@@ -577,158 +724,117 @@
 
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
-            const monthYearEl = document.getElementById('calendar-month-year');
-            const acadYearEl = document.getElementById('calendar-academic-year');
-            
             grid.innerHTML = '';
-            
+
             const month = displayMonthDate.getMonth();
             const year = displayMonthDate.getFullYear();
-            
-            monthYearEl.textContent = `${monthNames[month]} ${year}`;
-            const acadStartYear = getAcademicYear(displayMonthDate);
-            acadYearEl.textContent = `${acadStartYear} / ${acadStartYear + 1} уч. год`;
+            document.getElementById('calendar-month-year').textContent = `${monthNames[month]} ${year}`;
 
+            // Заголовок дней недели
             const weekHeader = document.createElement('div');
-            weekHeader.className = 'calendar-cell header-cell';
+            weekHeader.className = 'calendar-cell bg-slate-200/50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 font-bold text-[0.72rem]';
             weekHeader.textContent = '№';
             grid.appendChild(weekHeader);
 
             dayNamesShort.forEach(d => {
                 const cell = document.createElement('div');
-                cell.className = 'calendar-cell header-cell';
+                cell.className = 'calendar-cell bg-slate-200/50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 font-semibold text-[0.72rem] py-1';
                 cell.textContent = d;
                 grid.appendChild(cell);
             });
 
-            const firstDayOfMonth = new Date(year, month, 1);
-            const lastDayOfMonth = new Date(year, month + 1, 0);
-
-            let startDay = firstDayOfMonth.getDay();
-            startDay = startDay === 0 ? 7 : startDay;
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            let startDay = firstDay.getDay() === 0 ? 7 : firstDay.getDay();
 
             const daysArray = [];
-
-            for (let i = startDay - 1; i > 0; i--) {
-                daysArray.push(new Date(year, month, 1 - i));
-            }
-            for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
-                daysArray.push(new Date(year, month, i));
-            }
+            for (let i = startDay - 1; i > 0; i--) daysArray.push(new Date(year, month, 1 - i));
+            for (let i = 1; i <= lastDay.getDate(); i++) daysArray.push(new Date(year, month, i));
             const remaining = 7 - (daysArray.length % 7);
             if (remaining < 7) {
-                for (let i = 1; i <= remaining; i++) {
-                    daysArray.push(new Date(year, month + 1, i));
-                }
+                for (let i = 1; i <= remaining; i++) daysArray.push(new Date(year, month + 1, i));
             }
 
-            const totalWeeks = daysArray.length / 7;
             let dayIndex = 0;
+            const totalWeeks = daysArray.length / 7;
 
             for (let w = 0; w < totalWeeks; w++) {
-                const mondayOfThisWeek = daysArray[dayIndex];
-                const weekNum = getAcademicWeek(mondayOfThisWeek);
-
-                const weekNumCell = document.createElement('div');
-                weekNumCell.className = 'calendar-cell week-col-cell';
-                weekNumCell.textContent = weekNum;
-                grid.appendChild(weekNumCell);
+                const weekNum = getAcademicWeek(daysArray[dayIndex]);
+                const weekCell = document.createElement('div');
+                weekCell.className = 'calendar-cell bg-slate-200/50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 font-bold text-[0.72rem]';
+                weekCell.textContent = weekNum > 0 ? weekNum : '-';
+                grid.appendChild(weekCell);
 
                 for (let d = 0; d < 7; d++) {
                     const dayDate = daysArray[dayIndex];
                     const cell = document.createElement('div');
-                    cell.className = 'calendar-cell';
+                    cell.className = 'calendar-cell bg-white dark:bg-slate-900';
 
                     const isCurrentMonth = dayDate.getMonth() === month;
-                    const isToday = isSameDay(dayDate, todayDate);
-                    const isSelected = isSameDay(dayDate, selectedCalendarDate);
-
-                    if (!isCurrentMonth) {
-                        cell.classList.add('other-month');
-                    }
+                    const isToday = dayDate.toDateString() === todayDate.toDateString();
+                    const isSelected = dayDate.toDateString() === selectedCalendarDate.toDateString();
 
                     const inner = document.createElement('div');
                     inner.textContent = dayDate.getDate();
 
+                    if (!isCurrentMonth) cell.classList.add('text-slate-300', 'dark:text-slate-600');
+
                     if (isSelected) {
-                        inner.className = 'selected-bubble';
+                        inner.className = 'selected-bubble bg-blue-600 text-white';
                     } else if (isToday) {
-                        inner.className = 'today-bubble';
+                        inner.className = 'today-bubble border-blue-500 text-blue-600 dark:text-blue-400';
                     }
 
-                    const dayLessons = getLessonsForDay(dayDate);
-                    if (dayLessons.length > 0 && !isSelected) {
+                    if (getLessonsForDay(dayDate).length > 0 && !isSelected) {
                         const dot = document.createElement('div');
-                        dot.className = 'has-lessons-dot';
+                        dot.className = 'has-lessons-dot bg-blue-500';
                         cell.appendChild(dot);
                     }
 
                     cell.appendChild(inner);
                     cell.onclick = () => onDateClick(dayDate);
                     grid.appendChild(cell);
-
                     dayIndex++;
                 }
             }
         }
 
         function renderSelectedDay() {
-            const titleEl = document.getElementById('selected-day-title');
-            const subTitleEl = document.getElementById('selected-day-subtitle');
             const listEl = document.getElementById('day-lessons-list');
-
             const dayOfWeek = getRussianDayOfWeek(selectedCalendarDate);
             const weekNum = getAcademicWeek(selectedCalendarDate);
-            const isEven = weekNum % 2 === 0;
 
-            titleEl.textContent = `${dayFullNames[dayOfWeek]}, ${selectedCalendarDate.getDate()} ${monthNamesGenitive[selectedCalendarDate.getMonth()]}`;
-            subTitleEl.textContent = `${weekNum}-я неделя`;
+            document.getElementById('selected-day-title').textContent = `${dayFullNames[dayOfWeek]}, ${selectedCalendarDate.getDate()} ${monthNamesGenitive[selectedCalendarDate.getMonth()]}`;
+            document.getElementById('selected-day-subtitle').textContent = weekNum > 0 ? `${weekNum}-я неделя` : 'Вне семестра';
 
             const lessons = getLessonsForDay(selectedCalendarDate);
             listEl.innerHTML = '';
 
             if (lessons.length === 0) {
                 listEl.innerHTML = `
-                    <div class="py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                      
-                        <p class="text-sm font-semibold text-slate-700">Нет занятий на этот день</p>
-                       
-                        <button onclick="openAddLessonModal()" class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            Добавить предмет
-                        </button>
-                    </div>
-                `;
+                    <div class="py-6 text-center bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <p class="text-sm font-semibold text-slate-600 dark:text-slate-400">Нет занятий</p>
+                    </div>`;
                 return;
             }
 
             lessons.forEach(l => {
                 const card = document.createElement('div');
-                card.className = 'p-3 rounded-xl border border-slate-200/90 hover:border-blue-300 bg-slate-50/50 hover:bg-white transition flex flex-col gap-1.5 shadow-sm';
-                
+                card.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex flex-col gap-1 shadow-sm';
                 card.innerHTML = `
                     <div class="flex items-center justify-between gap-2">
-                        <span class="font-mono text-xs font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-md">
+                        <span class="font-mono text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-md">
                             ${l.timeStart} – ${l.timeEnd}
                         </span>
-                        <span class="text-[11px] font-medium text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full">
-                            ${l.type || 'Занятие'} • нед: ${l.weeks}
+                        <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full">
+                            нед: ${l.weeks}
                         </span>
                     </div>
-                    <div class="font-bold text-slate-800 text-sm leading-snug">
-                        ${l.subject}
-                    </div>
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-0.5">
-                        ${l.room ? `
-                            <div class="flex items-center gap-1 text-amber-700 font-medium">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                <span>${l.room}</span>
-                            </div>` : ''}
-                        ${l.teacher ? `
-                            <div class="flex items-center gap-1 text-slate-600">
-                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                <span>${l.teacher}</span>
-                            </div>` : ''}
+                    <div class="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug mt-0.5">${l.subject}</div>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        ${l.type ? `<span>${l.type}</span>` : ''}
+                        ${l.room ? `<span class="text-amber-700 dark:text-amber-500 font-medium">• ${l.room}</span>` : ''}
+                        ${l.teacher ? `<span>• ${l.teacher}</span>` : ''}
                     </div>
                 `;
                 listEl.appendChild(card);
@@ -736,7 +842,7 @@
         }
 
         // ==========================================
-        // 6. СЕТКА НЕДЕЛИ
+        // 5. ПОЛНАЯ СЕТКА И УПРАВЛЕНИЕ
         // ==========================================
         function populateWeekSelect() {
             const select = document.getElementById('table-week-select');
@@ -748,211 +854,108 @@
             }
         }
 
-        function filterTableByWeek(val) {
-            renderFullTableView();
-        }
+        function filterTableByWeek() { renderFullTableView(); }
 
         function renderFullTableView() {
             const container = document.getElementById('full-schedule-container');
-            const select = document.getElementById('table-week-select');
-            const label = document.getElementById('table-filter-label');
-            const val = select.value;
-
-            let targetWeek = null;
-            if (val === 'current') {
-                targetWeek = getAcademicWeek(todayDate);
-                label.textContent = `Только ${targetWeek}-я неделя (текущая)`;
-            } else if (val === 'all') {
-                targetWeek = null;
-                label.textContent = 'Все пары (полная сетка)';
-            } else {
-                targetWeek = parseInt(val, 10);
-                label.textContent = `Только ${targetWeek}-я неделя`;
-            }
+            const val = document.getElementById('table-week-select').value;
+            let targetWeek = val === 'all' ? null : (val === 'current' ? getAcademicWeek(todayDate) : parseInt(val, 10));
 
             container.innerHTML = '';
-
             if (schedule.length === 0) {
-                container.innerHTML = `
-                    <div class="py-12 text-center bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                        <div class="text-3xl mb-2">📋</div>
-                        <h4 class="font-bold text-slate-800 text-base">Расписание пока пустое</h4>
-                        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                            Добавьте свои предметы через кнопку ниже или импортируйте расписание от старосты.
-                        </p>
-                        <div class="mt-4 flex justify-center gap-2">
-                            <button onclick="openAddLessonModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm">
-                                + Добавить пару
-                            </button>
-                            <button onclick="openShareModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold">
-                                Загрузить JSON
-                            </button>
-                        </div>
-                    </div>
-                `;
+                container.innerHTML = `<div class="py-8 text-center text-sm text-slate-500 dark:text-slate-400">Расписание пустое. Добавьте пары через Настройки.</div>`;
                 return;
             }
 
             for (let day = 1; day <= 6; day++) {
                 let dayLessons = schedule.filter(item => item.day === day);
-                
-                if (targetWeek !== null) {
-                    dayLessons = dayLessons.filter(item => isWeekMatching(item.weeks, targetWeek));
-                }
+                if (targetWeek !== null) dayLessons = dayLessons.filter(item => isWeekMatching(item.weeks, targetWeek));
+
+                if (dayLessons.length === 0 && targetWeek !== null) continue; // Скрываем пустые дни при фильтре
 
                 dayLessons.sort((a, b) => a.timeStart.localeCompare(b.timeStart));
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3.5 shadow-sm';
 
-                const dayCard = document.createElement('div');
-                dayCard.className = 'bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-sm';
-
-                let lessonsHtml = '';
-                if (dayLessons.length === 0) {
-                    lessonsHtml = `<p class="text-xs text-slate-400 italic py-1">В этот день пар нет</p>`;
-                } else {
-                    lessonsHtml = dayLessons.map(l => `
-                        <div class="py-2 border-b border-slate-100 last:border-0">
-                            <div class="flex items-center justify-between text-xs mb-1">
-                                <span class="font-bold text-blue-600 font-mono">${l.timeStart}-${l.timeEnd}</span>
-                                <span class="text-[11px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">${l.weeks}</span>
+                let html = `<div class="font-bold text-slate-800 dark:text-slate-200 text-sm pb-2 border-b border-slate-100 dark:border-slate-800 mb-2">${dayFullNames[day]}</div>`;
+                if (dayLessons.length === 0) html += `<p class="text-xs text-slate-400 italic">Нет пар</p>`;
+                else {
+                    html += `<div class="space-y-2">` + dayLessons.map(l => `
+                        <div class="py-1">
+                            <div class="flex justify-between text-xs mb-0.5">
+                                <span class="font-bold text-blue-600 dark:text-blue-400">${l.timeStart}-${l.timeEnd}</span>
+                                <span class="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 rounded">${l.weeks}</span>
                             </div>
-                            <div class="text-xs font-bold text-slate-800">${l.subject}</div>
-                            <div class="text-[11px] text-slate-500 mt-0.5 flex flex-wrap gap-x-2">
-                                ${l.type ? `<span>${l.type}</span>` : ''}
-                                ${l.teacher ? `<span>• ${l.teacher}</span>` : ''}
-                                ${l.room ? `<span class="text-amber-700 font-medium">• ${l.room}</span>` : ''}
-                            </div>
+                            <div class="text-xs font-bold text-slate-800 dark:text-slate-200">${l.subject}</div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400">${l.room ? l.room + ' • ' : ''}${l.teacher || ''}</div>
                         </div>
-                    `).join('');
+                    `).join('') + `</div>`;
                 }
-
-                dayCard.innerHTML = `
-                    <div class="flex items-center justify-between font-bold text-slate-800 text-sm pb-2 border-b border-slate-100 mb-2">
-                        <span>${dayFullNames[day]}</span>
-                        <span class="text-xs text-slate-400 font-normal">${dayLessons.length} пар</span>
-                    </div>
-                    <div class="space-y-1">
-                        ${lessonsHtml}
-                    </div>
-                `;
-                container.appendChild(dayCard);
+                card.innerHTML = html;
+                container.appendChild(card);
             }
         }
 
         // ==========================================
-        // 7. НАВИГАЦИЯ ПО ВКЛАДКАМ
+        // 6. МОДАЛКИ (РЕДАКТИРОВАНИЕ, НАСТРОЙКИ, ШЕЙР)
         // ==========================================
         function switchTab(tab) {
-            const calView = document.getElementById('view-calendar');
-            const tableView = document.getElementById('view-table');
-            const calBtn = document.getElementById('tab-calendar-btn');
-            const tableBtn = document.getElementById('tab-table-btn');
-
-            if (tab === 'calendar') {
-                calView.classList.remove('hidden');
-                tableView.classList.add('hidden');
-                calBtn.classList.add('active');
-                tableBtn.classList.remove('active');
-                renderCalendar();
-                renderSelectedDay();
-            } else {
-                calView.classList.add('hidden');
-                tableView.classList.remove('hidden');
-                calBtn.classList.remove('active');
-                tableBtn.classList.add('active');
-                renderFullTableView();
-            }
+            document.getElementById('view-calendar').classList.toggle('hidden', tab !== 'calendar');
+            document.getElementById('view-table').classList.toggle('hidden', tab !== 'table');
+            document.getElementById('tab-calendar-btn').classList.toggle('active', tab === 'calendar');
+            document.getElementById('tab-table-btn').classList.toggle('active', tab === 'table');
+            if (tab === 'table') renderFullTableView();
         }
 
-        // ==========================================
-        // 8. ДОБАВЛЕНИЕ И УПРАВЛЕНИЕ ПАРАМИ
-        // ==========================================
-        function openEditScheduleModal() {
-            renderManageModalList();
-            document.getElementById('manage-modal').classList.remove('hidden');
-        }
-
-        function closeEditScheduleModal() {
-            document.getElementById('manage-modal').classList.add('hidden');
-        }
-
-        function renderManageModalList() {
+        function openManageModal() {
             const list = document.getElementById('manage-lessons-list');
-            list.innerHTML = '';
+            list.innerHTML = schedule.length === 0 ? `<div class="py-6 text-center text-xs text-slate-400">Пусто</div>` : '';
 
-            if (schedule.length === 0) {
-                list.innerHTML = `
-                    <div class="py-6 text-center text-xs text-slate-400">
-                        Список дисциплин пуст. Добавьте первую пару кнопкой выше.
-                    </div>
-                `;
-                return;
-            }
-
-            const sorted = [...schedule].sort((a,b) => {
-                if (a.day !== b.day) return a.day - b.day;
-                return a.timeStart.localeCompare(b.timeStart);
-            });
-
-            sorted.forEach(l => {
+            [...schedule].sort((a, b) => a.day !== b.day ? a.day - b.day : a.timeStart.localeCompare(b.timeStart)).forEach(l => {
                 const item = document.createElement('div');
-                item.className = 'p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs';
+                item.className = 'p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between text-xs';
                 item.innerHTML = `
                     <div class="flex-1 pr-2">
-                        <div class="font-semibold text-slate-800">${dayNamesShort[l.day-1]} • ${l.timeStart}-${l.timeEnd} • ${l.subject}</div>
-                        <div class="text-[11px] text-slate-500 mt-0.5">Недели: ${l.weeks} ${l.room ? `| ${l.room}` : ''}</div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">${dayNamesShort[l.day - 1]} • ${l.timeStart} • ${l.subject}</div>
                     </div>
-                    <button onclick="openEditLessonForm('${l.id}')" class="px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg font-semibold text-blue-600 hover:bg-blue-50 active:scale-95">
-                        Изм.
-                    </button>
+                    <button onclick="openEditLessonForm('${l.id}')" class="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg font-semibold text-blue-600 dark:text-blue-400">Изм.</button>
                 `;
                 list.appendChild(item);
             });
+            document.getElementById('manage-modal').classList.remove('hidden');
         }
+        function closeManageModal() { document.getElementById('manage-modal').classList.add('hidden'); }
 
         function openAddLessonModal() {
-            document.getElementById('modal-lesson-title').textContent = "Новая пара";
+            document.getElementById('lesson-form').reset();
             document.getElementById('form-lesson-id').value = "";
             document.getElementById('form-day').value = getRussianDayOfWeek(selectedCalendarDate) <= 6 ? getRussianDayOfWeek(selectedCalendarDate) : "1";
-            document.getElementById('form-time-start').value = "";
-            document.getElementById('form-time-end').value = "";
-            document.getElementById('form-subject').value = "";
-            document.getElementById('form-type').value = "";
-            document.getElementById('form-room').value = "";
-            document.getElementById('form-teacher').value = "";
-            document.getElementById('form-weeks').value = "все";
-            
             document.getElementById('btn-delete-lesson').classList.add('hidden');
             document.getElementById('lesson-modal').classList.remove('hidden');
         }
 
         function openEditLessonForm(id) {
-            const lesson = schedule.find(item => item.id === id);
-            if (!lesson) return;
-
-            document.getElementById('modal-lesson-title').textContent = "Редактировать пару";
-            document.getElementById('form-lesson-id').value = lesson.id;
-            document.getElementById('form-day').value = lesson.day;
-            document.getElementById('form-time-start').value = lesson.timeStart;
-            document.getElementById('form-time-end').value = lesson.timeEnd;
-            document.getElementById('form-subject').value = lesson.subject;
-            document.getElementById('form-type').value = lesson.type || "";
-            document.getElementById('form-room').value = lesson.room || "";
-            document.getElementById('form-teacher').value = lesson.teacher || "";
-            document.getElementById('form-weeks').value = lesson.weeks || "все";
-
+            const l = schedule.find(x => x.id === id);
+            if (!l) return;
+            document.getElementById('form-lesson-id').value = l.id;
+            document.getElementById('form-day').value = l.day;
+            document.getElementById('form-time-start').value = l.timeStart;
+            document.getElementById('form-time-end').value = l.timeEnd;
+            document.getElementById('form-subject').value = l.subject;
+            document.getElementById('form-type').value = l.type || "";
+            document.getElementById('form-room').value = l.room || "";
+            document.getElementById('form-teacher').value = l.teacher || "";
+            document.getElementById('form-weeks').value = l.weeks || "все";
             document.getElementById('btn-delete-lesson').classList.remove('hidden');
             document.getElementById('lesson-modal').classList.remove('hidden');
         }
-
-        function closeLessonModal() {
-            document.getElementById('lesson-modal').classList.add('hidden');
-        }
+        function closeLessonModal() { document.getElementById('lesson-modal').classList.add('hidden'); }
 
         function saveLesson(e) {
             e.preventDefault();
             const id = document.getElementById('form-lesson-id').value;
             const newLesson = {
-                id: id || 'item_' + Date.now(),
+                id: id || 'id_' + Date.now(),
                 day: parseInt(document.getElementById('form-day').value, 10),
                 timeStart: document.getElementById('form-time-start').value.trim(),
                 timeEnd: document.getElementById('form-time-end').value.trim(),
@@ -962,30 +965,178 @@
                 teacher: document.getElementById('form-teacher').value.trim(),
                 weeks: document.getElementById('form-weeks').value.trim()
             };
-
             if (id) {
                 const idx = schedule.findIndex(x => x.id === id);
                 if (idx !== -1) schedule[idx] = newLesson;
-            } else {
-                schedule.push(newLesson);
-            }
+            } else schedule.push(newLesson);
 
-            saveScheduleToStorage();
+            saveSchedule();
             closeLessonModal();
-            renderManageModalList();
+            openManageModal();
             renderAll();
         }
 
         function deleteCurrentLesson() {
             const id = document.getElementById('form-lesson-id').value;
-            if (!id) return;
-            if (confirm("Удалить это занятие?")) {
+            if (confirm("Удалить занятие?")) {
                 schedule = schedule.filter(x => x.id !== id);
-                saveScheduleToStorage();
+                saveSchedule();
                 closeLessonModal();
-                renderManageModalList();
+                openManageModal();
                 renderAll();
             }
+        }
+        function clearAllSchedule() {
+            if (confirm("Удалить ВСЕ пары?")) { schedule = []; saveSchedule(); openManageModal(); renderAll(); }
+        }
+
+        function openSettingsModal() { document.getElementById('settings-modal').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
+
+        function openShareModal() {
+            document.getElementById('share-modal').classList.remove('hidden');
+            document.getElementById('share-toast').classList.add('hidden');
+        }
+        function closeShareModal() { document.getElementById('share-modal').classList.add('hidden'); }
+
+        // ==========================================
+        // 7. СИСТЕМА КОПИРОВАНИЯ (FALLBACK)
+        // ==========================================
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0"; textArea.style.left = "0"; textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                var successful = document.execCommand('copy');
+                if (successful) showToast();
+                else prompt("Не удалось скопировать автоматически. Скопируйте ссылку вручную:", text);
+            } catch (err) {
+                prompt("Не удалось скопировать автоматически. Скопируйте ссылку вручную:", text);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function copyTextToClipboard(text) {
+            if (!navigator.clipboard) {
+                fallbackCopyTextToClipboard(text);
+                return;
+            }
+            navigator.clipboard.writeText(text).then(showToast, function (err) {
+                fallbackCopyTextToClipboard(text);
+            });
+        }
+
+        // Кодирование Unicode (русских букв) в Base64
+        function utoa(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
+        // Декодирование Base64 обратно в русский текст
+        function atou(b64) {
+            return decodeURIComponent(escape(window.atob(b64)));
+        }
+
+        // Сжатие расписания: используем точные названия полей timeStart и subject
+        function compressSchedule(list) {
+            return list.map(item => [
+                item.id || ('id_' + Date.now()),
+                item.day,
+                item.timeStart,
+                item.timeEnd,
+                item.subject,
+                item.type || "",
+                item.room || "",
+                item.teacher || "",
+                item.weeks || "все"
+            ]);
+        }
+
+        // Распаковка сжатого массива обратно в исходный формат
+        function decompressSchedule(arr) {
+            return arr.map(item => ({
+                id: item[0],
+                day: item[1],
+                timeStart: item[2],
+                timeEnd: item[3],
+                subject: item[4],
+                type: item[5],
+                room: item[6],
+                teacher: item[7],
+                weeks: item[8]
+            }));
+        }
+        function generateShareUrl() {
+            try {
+                // 1. Сжимаем массив объектов в компактный список
+                const compressed = compressSchedule(schedule);
+                // 2. Преобразуем в короткий Base64
+                const packed = utoa(JSON.stringify(compressed));
+
+                const baseUrl = window.location.origin + window.location.pathname;
+                return `${baseUrl}#data=${encodeURIComponent(packed)}`;
+            } catch (e) {
+                console.error("Ошибка при генерации ссылки:", e);
+                // Запасной вариант без сжатия
+                return `${window.location.origin}${window.location.pathname}#data=${encodeURIComponent(JSON.stringify(schedule))}`;
+            }
+        }
+        function copyShareLink() {
+            const url = generateShareUrl();
+            copyTextToClipboard(url);
+        }
+
+        function importFromJsonInput() {
+            const raw = document.getElementById('import-json-input').value.trim();
+            if (!raw) return;
+
+            let parsed = null;
+
+            // 1. Проверяем, если вставили ссылку целиком (http...#data=...)
+            let cleanText = raw;
+            if (cleanText.includes('#data=')) {
+                cleanText = cleanText.split('#data=')[1];
+            }
+
+            // 2. Пробуем декодировать сжатый Base64
+            try {
+                const decoded = atou(decodeURIComponent(cleanText));
+                const json = JSON.parse(decoded);
+                parsed = Array.isArray(json) && Array.isArray(json[0]) ? decompressSchedule(json) : json;
+            } catch (e1) {
+                // 3. Если не Base64, пробуем прочитать как обычный JSON
+                try {
+                    parsed = JSON.parse(cleanText);
+                    if (Array.isArray(parsed) && Array.isArray(parsed[0])) {
+                        parsed = decompressSchedule(parsed);
+                    }
+                } catch (e2) {
+                    console.error("Ошибка парсинга:", e1, e2);
+                }
+            }
+
+            // 4. Валидация и сохранение
+            if (Array.isArray(parsed)) {
+                schedule = parsed;
+                saveSchedule();
+                renderAll();
+                closeShareModal();
+                document.getElementById('import-json-input').value = '';
+                showNotification("Расписание успешно загружено!");
+            } else {
+                alert("Ошибка формата: проверьте вставленный код или ссылку.");
+            }
+        }
+
+        function showToast() { document.getElementById('share-toast').classList.remove('hidden'); }
+        function showNotification(msg) {
+            const n = document.createElement('div');
+            n.className = "fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/90 dark:bg-white text-white dark:text-slate-900 text-xs font-bold px-4 py-2.5 rounded-full shadow-lg z-50 backdrop-blur-sm transition-all";
+            n.textContent = msg;
+            document.body.appendChild(n);
+            setTimeout(() => n.remove(), 3000);
         }
 
         function renderAll() {
@@ -994,78 +1145,8 @@
             renderFullTableView();
         }
 
-        // ==========================================
-        // 9. ЭКСПОРТ И ИМПОРТ
-        // ==========================================
-        function openShareModal() {
-            document.getElementById('share-modal').classList.remove('hidden');
-            document.getElementById('share-toast').classList.add('hidden');
-        }
-
-        function closeShareModal() {
-            document.getElementById('share-modal').classList.add('hidden');
-        }
-
-        function getEncodedShareData() {
-            const jsonStr = JSON.stringify(schedule);
-            return btoa(unescape(encodeURIComponent(jsonStr)));
-        }
-
-        function copyShareLink() {
-            const encoded = getEncodedShareData();
-            const fullUrl = window.location.origin + window.location.pathname + '#data=' + encoded;
-            copyTextToClipboard(fullUrl);
-            
-            const toast = document.getElementById('share-toast');
-            toast.textContent = "Ссылка скопирована! Отправьте её одногруппникам.";
-            toast.classList.remove('hidden');
-        }
-
-        function copyJsonData() {
-            const jsonStr = JSON.stringify(schedule, null, 2);
-            copyTextToClipboard(jsonStr);
-            const toast = document.getElementById('share-toast');
-            toast.textContent = "JSON-код скопирован в буфер обмена!";
-            toast.classList.remove('hidden');
-        }
-
-        function importFromJsonInput() {
-            const val = document.getElementById('import-json-input').value.trim();
-            if (!val) return;
-            try {
-                const parsed = JSON.parse(val);
-                if (Array.isArray(parsed)) {
-                    schedule = parsed;
-                    saveScheduleToStorage();
-                    renderAll();
-                    closeShareModal();
-                    showNotification("Расписание успешно импортировано!");
-                } else {
-                    alert("Неверный формат данных JSON.");
-                }
-            } catch(e) {
-                alert("Ошибка чтения JSON. Проверьте правильность вставки.");
-            }
-        }
-
-        function copyTextToClipboard(text) {
-            const temp = document.createElement("textarea");
-            temp.value = text;
-            document.body.appendChild(temp);
-            temp.select();
-            document.execCommand("copy");
-            document.body.removeChild(temp);
-        }
-
-        function showNotification(msg) {
-            const n = document.createElement('div');
-            n.className = "fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg z-50 backdrop-blur-sm transition-all";
-            n.textContent = msg;
-            document.body.appendChild(n);
-            setTimeout(() => n.remove(), 3000);
-        }
-
         window.onload = initApp;
     </script>
 </body>
+
 </html>
