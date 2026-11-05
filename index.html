@@ -468,7 +468,8 @@
                 </div>
 
                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-                    Отправьте ссылку одногруппникам: при переходе по ней, ваше расписание автоматически загрузится у них.
+                    Отправьте ссылку одногруппникам: при переходе по ней, ваше расписание автоматически загрузится у
+                    них.
                 </p>
 
                 <div class="space-y-3">
@@ -610,7 +611,7 @@
             }
 
             // Если ссылки нет, читаем из памяти браузера
-            const saved = localStorage.getItem('study_schedule');
+            const saved = localStorage.getItem('study_calendar_schedule_v2');
             if (saved) {
                 try {
                     schedule = JSON.parse(saved);
